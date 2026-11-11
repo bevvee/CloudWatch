@@ -81,10 +81,18 @@ def mark_seen(request,pk):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def device_post(request):
- serializer=ReadingSerializer(data=request.data)
- serializer.is_valid(raise_exception=True)
- reading=record_measurement(serializer.validated_data)
- return Response(ReadingSerializer(reading).data,status=status.HTTP_201_CREATED)
+    # 1. Validate incoming sensor data
+    serializer = ReadingSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    # 2. Save reading and run existing monitoring logic
+    reading = record_measurement(serializer.validated_data)
+
+    # 3. Return API response
+    return Response(
+        ReadingSerializer(reading).data,
+        status=status.HTTP_201_CREATED
+    )
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def api_data(request):return Response({'data':ReadingSerializer(Reading.objects.all()[:200],many=True).data})

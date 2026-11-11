@@ -21,7 +21,7 @@ Copy-Item .env.example .env
 python manage.py migrate
 python manage.py setup_operators
 python manage.py createsuperuser
-python manage.py runserver 192.168.1.40:8000
+python manage.py runserver 172.25.96.1:8000
 ```
 
 Créer trois comptes actifs dans `/admin/`, les ajouter au groupe `Operateurs`. Les comptes administrateurs peuvent régler les seuils depuis `/configuration/`.

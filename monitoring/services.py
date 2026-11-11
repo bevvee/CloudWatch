@@ -2,6 +2,7 @@ from django.db import transaction
 from .models import Reading,Incident,Event,Notification,Settings
 from django.contrib.auth.models import User
 from django.conf import settings
+from .ntfy_service import send_temperature_alert
 
 def current_settings():
  obj=Settings.objects.first()
@@ -19,6 +20,7 @@ def record_measurement(validated):
    Event.objects.create(incident=incident,action='created',detail=f'Mesure {reading.id} : {reading.temp} °C; seuils {config.min_temp} à {config.max_temp} °C')
    operators=list(User.objects.filter(is_active=True,groups__name='Operateurs').distinct().order_by('id')[:3])
    Notification.objects.bulk_create([Notification(user=u,incident=incident) for u in operators])
+   send_temperature_alert(reading.temp, reading.hum)
   else:
    Event.objects.create(incident=incident,action='excursion',detail=f'Mesure {reading.id} : {reading.temp} °C')
  return reading

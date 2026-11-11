@@ -4,9 +4,9 @@
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
 #define DHTTYPE DHT11
-const char* ssid = "Bosston";
-const char* password = "K@r@Te_1965";
-const char* serverName = "http://192.168.1.40:8000/api/post";
+const char* ssid = "Et@ehei";
+const char* password = "eheio2023";
+const char* serverName = "http://10.9.9.185:8000/api/post";
 #define dht_dpin 12
 DHT dht(dht_dpin, DHTTYPE);
 void setup() {
