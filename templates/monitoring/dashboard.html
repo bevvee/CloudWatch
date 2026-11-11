@@ -1,0 +1,384 @@
+
+{% extends 'monitoring/base.html' %}
+
+{% block title %}Tableau de bord{% endblock %}
+
+{% block content %}
+
+<div class="intro">
+  <div>
+    <h2>Vue d'ensemble de l'enceinte</h2>
+    <p>Suivi en temps réel des conditions de conservation.</p>
+  </div>
+
+  <span class="pill {% if stale %}danger{% else %}good{% endif %}">
+    {% if stale %}
+      ● Capteur hors ligne / données anciennes
+    {% else %}
+      ● Données récentes
+    {% endif %}
+  </span>
+</div>
+
+<div class="stats">
+
+  <!-- TEMPERATURE -->
+  <section class="stat">
+    <div class="stat-top">
+      <span>Température actuelle</span>
+      <span class="stat-icon blue">🌡</span>
+    </div>
+
+    <div class="big">
+      {% if latest %}
+        {{ latest.temp|floatformat:1 }}<small> °C</small>
+      {% else %}
+        —
+      {% endif %}
+    </div>
+
+    <div class="muted">
+      Plage autorisée :
+      {{ config.min_temp }} à {{ config.max_temp }} °C
+    </div>
+
+    {% if latest %}
+      <div class="muted" style="margin-top: 8px;">
+        🕒 Mesure reçue
+        <span
+          class="measurement-age"
+          data-timestamp="{{ latest.created_at|date:'c' }}"
+        >
+          Calcul en cours...
+        </span>
+      </div>
+    {% else %}
+      <div class="muted" style="margin-top: 8px;">
+        Aucune mesure reçue
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- HUMIDITY -->
+  <section class="stat">
+    <div class="stat-top">
+      <span>Humidité relative</span>
+      <span class="stat-icon cyan">◉</span>
+    </div>
+
+    <div class="big">
+      {% if latest %}
+        {{ latest.hum|floatformat:1 }}<small> %</small>
+      {% else %}
+        —
+      {% endif %}
+    </div>
+
+    <div class="muted">
+      Dernière mesure enregistrée
+    </div>
+
+    {% if latest %}
+      <div class="muted" style="margin-top: 8px;">
+        🕒 Mesure reçue
+        <span
+          class="measurement-age"
+          data-timestamp="{{ latest.created_at|date:'c' }}"
+        >
+          Calcul en cours...
+        </span>
+      </div>
+    {% else %}
+      <div class="muted" style="margin-top: 8px;">
+        Aucune mesure reçue
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- ACTIVE INCIDENTS -->
+  <section class="stat">
+    <div class="stat-top">
+      <span>Incidents actifs</span>
+      <span class="stat-icon orange">⚑</span>
+    </div>
+
+    <div class="big">{{ active }}</div>
+
+    <div class="muted">
+      <a href="{% url 'incidents' %}">
+        Consulter les incidents →
+      </a>
+    </div>
+  </section>
+
+  <!-- NOTIFICATIONS -->
+  <section class="stat">
+    <div class="stat-top">
+      <span>Notifications non lues</span>
+      <span class="stat-icon purple">♧</span>
+    </div>
+
+    <div class="big">{{ unread }}</div>
+
+    <div class="muted">
+      <a href="{% url 'notifications' %}">
+        Voir les notifications →
+      </a>
+    </div>
+  </section>
+
+</div>
+
+<!-- CHART -->
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <h3>Évolution des mesures</h3>
+      <p>8 dernières mesures · Température et humidité</p>
+    </div>
+
+    <span class="tag">Actualisation automatique</span>
+  </div>
+
+  <div class="chart-wrap">
+    <canvas
+      id="chart"
+      width="1000"
+      height="320"
+      aria-label="Historique des huit dernières mesures"
+    ></canvas>
+  </div>
+
+  <div class="legend">
+    <span>
+      <i class="dot blue-bg"></i>
+      Température (°C)
+    </span>
+
+    <span>
+      <i class="dot cyan-bg"></i>
+      Humidité (%)
+    </span>
+  </div>
+</div>
+
+<div class="bottom-grid">
+
+  <!-- LATEST READINGS -->
+  <section class="panel">
+    <div class="panel-head">
+      <h3>Dernières mesures</h3>
+
+      <a href="{% url 'history' %}">
+        Tout voir →
+      </a>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Température</th>
+          <th>Humidité</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for r in readings reversed %}
+          <tr>
+            <td>{{ r.created_at|date:'d/m/Y H:i' }}</td>
+            <td>{{ r.temp }} °C</td>
+            <td>{{ r.hum }} %</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="3">Aucune mesure reçue.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SYSTEM STATUS -->
+  <section class="panel info">
+    <h3>État du système</h3>
+
+    <div class="info-row">
+      <span>Dernière transmission</span>
+      <b>
+        {% if latest %}
+          {{ latest.created_at|date:'d/m/Y H:i' }}
+        {% else %}
+          Jamais
+        {% endif %}
+      </b>
+    </div>
+
+    <div class="info-row">
+      <span>Fréquence attendue</span>
+      <b>20 minutes</b>
+    </div>
+
+    <div class="info-row">
+      <span>Alerte absence de données</span>
+      <b>{{ config.stale_minutes }} min</b>
+    </div>
+
+    <div class="info-row">
+      <span>Incidents enregistrés</span>
+      <b>{{ incident_count }}</b>
+    </div>
+
+    <a
+      class="button-outline"
+      href="{% url 'configuration' %}"
+    >
+      Configurer les seuils →
+    </a>
+  </section>
+
+</div>
+
+{{ chart_readings|json_script:'readings-data' }}
+
+{% endblock %}
+
+{% block scripts %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+
+<script>
+  // ========================================
+  // CHART.JS
+  // ========================================
+
+  const rows = JSON.parse(
+    document.getElementById("readings-data").textContent
+  );
+
+  if (window.Chart) {
+    new Chart(document.getElementById("chart"), {
+      type: "line",
+
+      data: {
+        labels: rows.map((x) =>
+          new Date(x.created_at).toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        ),
+
+        datasets: [
+          {
+            label: "Température (°C)",
+            data: rows.map((x) => x.temp),
+            borderColor: "#5575f5",
+            backgroundColor: "rgba(85,117,245,.08)",
+            tension: 0.35,
+            fill: true,
+            yAxisID: "temp",
+          },
+          {
+            label: "Humidité (%)",
+            data: rows.map((x) => x.hum),
+            borderColor: "#20b8c9",
+            backgroundColor: "rgba(32,184,201,.07)",
+            tension: 0.35,
+            fill: false,
+            yAxisID: "hum",
+          },
+        ],
+      },
+
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+
+        plugins: {
+          legend: {
+            display: false,
+          },
+        },
+
+        scales: {
+          temp: {
+            position: "left",
+            grid: {
+              color: "#eef1f8",
+            },
+          },
+
+          hum: {
+            position: "right",
+            grid: {
+              display: false,
+            },
+            min: 0,
+            max: 100,
+          },
+        },
+      },
+    });
+  }
+
+  // ========================================
+  // RELATIVE MEASUREMENT AGE
+  // ========================================
+
+  function formatMeasurementAge(timestamp) {
+    const receivedAt = new Date(timestamp);
+
+    if (Number.isNaN(receivedAt.getTime())) {
+      return "Date inconnue";
+    }
+
+    const seconds = Math.max(
+      0,
+      Math.floor((Date.now() - receivedAt.getTime()) / 1000)
+    );
+
+    if (seconds < 60) {
+      return "à l'instant";
+    }
+
+    if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      return `il y a ${minutes} min`;
+    }
+
+    if (seconds < 86400) {
+      const hours = Math.floor(seconds / 3600);
+      return `il y a ${hours} h`;
+    }
+
+    const days = Math.floor(seconds / 86400);
+    return `il y a ${days} j`;
+  }
+
+  function updateMeasurementAges() {
+    document.querySelectorAll(".measurement-age").forEach((element) => {
+      const timestamp = element.dataset.timestamp;
+
+      if (timestamp) {
+        element.textContent = formatMeasurementAge(timestamp);
+      }
+    });
+  }
+
+  // Display the age immediately
+  updateMeasurementAges();
+
+  // Update every 10 seconds
+  setInterval(updateMeasurementAges, 10000);
+
+  // ========================================
+  // DASHBOARD AUTO REFRESH
+  // ========================================
+
+  // Reload every 60 seconds to retrieve new measurements
+  setTimeout(() => {
+    location.reload();
+  }, 60000);
+</script>
+
+{% endblock %}

@@ -1,0 +1,6 @@
+Django>=5.2,<5.3
+ djangorestframework>=3.16,<3.17
+ dj-database-url>=2.3,<4
+ psycopg2-binary>=2.9,<3
+ whitenoise>=6.9,<7
+ python-dotenv>=1.0,<2
