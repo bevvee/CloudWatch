@@ -4,9 +4,9 @@
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
 #define DHTTYPE DHT11
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
-const char* serverName = "http://10.9.9.221:8000/api/post";
+const char* ssid = "Bosston";
+const char* password = "K@r@Te_1965";
+const char* serverName = "http://192.168.1.40:8000/api/post";
 #define dht_dpin 12
 DHT dht(dht_dpin, DHTTYPE);
 void setup() {
@@ -28,5 +28,5 @@ void loop() {
     if(code>0)Serial.println(http.getString());else Serial.println(http.errorToString(code));
     http.end();
   }
-  delay(10000); // pour tests ; utiliser 1200000 pour 20 minutes
+  delay(1200000); // pour tests ; utiliser 1200000 pour 20 minutes
 }
